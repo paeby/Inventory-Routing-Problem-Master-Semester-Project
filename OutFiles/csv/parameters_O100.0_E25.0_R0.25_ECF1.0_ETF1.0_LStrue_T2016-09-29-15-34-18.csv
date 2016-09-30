@@ -1,0 +1,26 @@
+hInitTemp, 10000.0
+hFinTemp, 0.01
+hStartTempControlParam, 0.6
+hCoolRate, 0.99998
+hPhiSegmentLength, 2000
+hReactionFactor, 0.5
+hDestroyOpNormFactorResets, [(1,4.5)]
+hRepairOpNormFactorResets, [(1,4.5)]
+hAwardS1, 30.0
+hAwardS2, 20.0
+hAwardS3, 5.0
+hInitPenalty, 1.0
+hPenaltyRate, 1.06
+
+expLocalSearchActivated, true
+
+expUseHemmelmayrDPOperator, true
+expDo2optLocalSearch, true
+exp2optFirstImprovement, false
+
+overflowCost, 100.0
+hEmergencyCost, 25.0
+hRouteFailureCostMultiplier, 0.25
+policyContainerEffectiveVolumeFraction, 1.0
+policyTruckEffectiveVolumeFraction, 1.0
+policyTruckEffectiveWeightFraction, 1.0
