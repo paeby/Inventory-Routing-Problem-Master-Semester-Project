@@ -1,7 +1,6 @@
 package alns.tour;
 
 import alns.algo.Penalties;
-
 import alns.data.Data;
 import alns.data.Point;
 import alns.data.Truck;
@@ -10,6 +9,7 @@ import alns.schedule.ContainerTracker;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Comparator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.BellmanFordShortestPath;
@@ -1524,7 +1524,56 @@ public abstract class Tour {
         // Return an ImmutablePair of bestIndex and bestIncrease
         return new ImmutablePair<>(bestIndex, bestIncrease);
     }
+    
+    /**
+     * Finds k-th best insertion position of the passed container in the tour, 
+     * and returns the insertion position and the cost increase
+     * difference in cost between the k-th cheapest route and the cheapest route
+     *
+     * @param insContainer the container to be inserted
+     * @return an ImmutablePair of the index and increase obtainable from the
+     * best insertion position
+     */
+    public ImmutablePair<Integer, Double> FindContainerInsertionRegret(Point insContainer, int k) {
 
+        // List of positions with respective cost 
+        ArrayList<ImmutablePair<Integer, Double>> insertions = new ArrayList<>();
+
+        // If the passed container is in the list of available containers
+        if (this.cTracker.GetVisit(insContainer, this.day) == false) {
+
+            // Insert container at position 0
+            this.InsertPoint(0, insContainer);
+
+            // Loop to add all the possible positions and their respective cost in the Array
+            // making sure we leave a starting point at the beginning, and a dump
+            // and a starting point at the end
+            for (int i = 1; i < this.tour.size() - 2; i++) {
+
+                // Move container gradually forward
+                this.SwapPoints(i - 1, i);
+                // Estimate new cost
+                double newCost = this.getEffectiveCost();
+                // If bestIncrease is improved, update bestIncrease and bestIndex
+                insertions.add(new ImmutablePair<>(i, newCost));
+            }
+            // Remove container from its last position  
+            this.RemovePoint(this.tour.size() - 3);
+        }
+        
+        // Sort the insert positions in ascending cost value
+        Collections.sort(insertions, new Comparator<ImmutablePair<Integer, Double>>() {
+            @Override
+            public int compare(final ImmutablePair<Integer, Double> o1, final ImmutablePair<Integer, Double> o2) {
+                return o1.right.compareTo(o2.right);
+            }
+        });
+        
+        // Return an ImmutablePair of the index of the k-th position and the difference in cost 
+        // between the k-th cheapest route and the cheapest route
+        return new ImmutablePair<>(insertions.get(k-1).left, insertions.get(0).right-insertions.get(k-1).right);
+    }
+    
     /**
      * Selects a random container in the tour, and removes all containers within
      * 2 * dist_min from it, where dist_min is the distance from the selected
