@@ -165,6 +165,12 @@ public class ScheduleIRP extends Schedule {
             case 9:
                 nbTimesAppliedRepairOp = this.replaceStartingPoint();
                 break;
+            case 10:
+                nbTimesAppliedRepairOp = this.insertRhoContainersWithRegret(5);
+                break;
+            case 11:
+                nbTimesAppliedRepairOp = this.insertDumpWithRegret(5);
+                break;
             default:
                 System.out.println("Repair operator index out of range...");
                 break;

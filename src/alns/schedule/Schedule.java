@@ -1078,6 +1078,52 @@ public abstract class Schedule {
         // Return rho
         return rho;
     }
+    
+    /**
+     * Selects a random container and inserts it in the k-th best position in the
+     * schedule, maximizing the difference in cost between the k-th best insertion
+     * and the best insertion. It is repeated rho times.
+     *
+     * @param k the k-th best position to compute the regret 
+     * @return rho - number of times operator is applied
+     */
+    protected int insertRhoContainersWithRegret(int k) {
+
+        // Select a rho with an upper bound on the number of containers in the data
+        int rho = this.rho(this.data.GetContainers().size());
+
+        // Insert rho random containers
+        for (int i = 0; i < rho; i++) {
+
+            // Select a random container from the data
+            int randIndex = this.data.GetRand().nextInt(this.data.GetContainers().size());
+            Point randContainer = this.data.GetContainers().get(randIndex);
+
+            // The tour index and position of the container that would
+            // lead to the max incrsease in the difference in cost
+            int tourIndex = Parameters._404;
+            int contIndex = Parameters._404;
+            double maxDifference = 0;
+
+            // Loop over all tours in the schedule to evaluate the difference in cost 
+            // from each of them if the container is inserted in the k-th best position
+            for (int j = 0; j < this.schedule.size(); j++) {
+                ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindContainerInsertionRegret(randContainer, k);
+                if (pair.getValue() > maxDifference) {
+                    tourIndex = j;
+                    contIndex = pair.getKey();
+                    maxDifference = pair.getValue();
+                }
+            }
+            // If feasible, insert container in its best position
+            if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
+                this.schedule.get(tourIndex).InsertPoint(contIndex, randContainer);
+            }
+        }
+
+        // Return rho
+        return rho;
+    }
 
     /**
      * Inserts customers that are close to each other (Shaw, 1997). In
@@ -1207,6 +1253,45 @@ public abstract class Schedule {
                 tourIndex = j;
                 dumpIndex = pair.getKey();
                 minIncrease = pair.getValue();
+            }
+        }
+        // If feasible, insert container
+        if (tourIndex != Parameters._404 && dumpIndex != Parameters._404) {
+            this.schedule.get(tourIndex).InsertPoint(dumpIndex, randDump);
+        }
+
+        // Return 1
+        return 1;
+    }
+    
+    /**
+     * Inserts a random dump in the tour and the position in the tour that would
+     * lead to the maximum cost difference between inserting it in its k-th best 
+     * position and its best solution
+     * 
+     * @param k the k-th best position to compute the regret 
+     * @return 1 - number of times operator is applied
+     */
+    protected int insertDumpWithRegret(int k) {
+
+        // Select a random dump from the data
+        int randIndex = this.data.GetRand().nextInt(this.data.GetDumps().size());
+        Point randDump = this.data.GetDumps().get(randIndex);
+
+        // The tour index and position of the dump that would
+        // lead to the maximum cost difference between inserting it in its k-th best 
+        // position and its best solution
+        int tourIndex = Parameters._404;
+        int dumpIndex = Parameters._404;
+        double maxDifference = 0;
+
+        // Loop over all tours in the schedule to evaluate the 
+        for (int j = 0; j < this.schedule.size(); j++) {
+            ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindDumpInsertionWithRegret(randDump, k);
+            if (pair.getValue() > maxDifference) {
+                tourIndex = j;
+                dumpIndex = pair.getKey();
+                maxDifference = pair.getValue();
             }
         }
         // If feasible, insert container
