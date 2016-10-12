@@ -9,6 +9,7 @@ import alns.data.Truck;
 import alns.param.Parameters;
 import alns.tour.Tour;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collections;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
@@ -884,6 +885,36 @@ public abstract class Schedule {
         // Return 1
         return 1;
     }
+    
+    /**
+     * Removes customers that are close to each other (Shaw, 1997). In
+     * particular, it randomly selects a tour and a container in it. It
+     * calculates the distance dist_min to the nearest container also served in
+     * this tour. It removes all containers within 2 * dist_min in this tour
+     * and all the tours in the schedule
+     *
+     * @return 1 - number of times operator is applied
+     */
+    protected int removeAllShawContainers() {
+        // Select one random tour
+        int tourIndex = this.data.GetRand().nextInt(this.schedule.size());
+        Tour tour = this.schedule.get(tourIndex);
+        // Perform Shaw removal on this tour
+        ImmutablePair<Point, Double> pointDistance = tour.RemoveShawContainers();
+        
+        // Perform Shaw removal on the other tours of the schedule
+        if(pointDistance.left != null){
+            for(int i = 0; i < this.schedule.size(); i++) {
+                if(i != tourIndex) {
+                    Tour t = this.schedule.get(i);
+                    t.RemoveShawContainers(pointDistance.left, pointDistance.right);
+                }
+            }
+        }
+        // Return 1
+        return 1;
+    }
+   
 
     /**
      * Selects randomly a day and empties all tours performed on this day.
@@ -1034,7 +1065,7 @@ public abstract class Schedule {
         // Return rho
         return rho;
     }
-
+    
     /**
      * Selects a random container and inserts it in the best position in the
      * schedule, considering the total cost. It is repeated rho times.
@@ -1042,47 +1073,54 @@ public abstract class Schedule {
      * @return rho - number of times operator is applied
      */
     protected int insertBestRhoContainers() {
-
         // Select a rho with an upper bound on the number of containers in the data
         int rho = this.rho(this.data.GetContainers().size());
-
-        // Insert rho random containers
         for (int i = 0; i < rho; i++) {
-
             // Select a random container from the data
             int randIndex = this.data.GetRand().nextInt(this.data.GetContainers().size());
             Point randContainer = this.data.GetContainers().get(randIndex);
-
-            // The tour index and position of the container that would
-            // lead to the minimum increase in the total schedule cost when inserted
-            int tourIndex = Parameters._404;
-            int contIndex = Parameters._404;
-            double minIncrease = Double.POSITIVE_INFINITY;
-
-            // Loop over all tours in the schedule to evaluate the increase 
-            // obtainable from each of them if the container is inserted in the best position
-            for (int j = 0; j < this.schedule.size(); j++) {
-                ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindBestContainerInsertion(randContainer);
-                if (pair.getValue() < minIncrease) {
-                    tourIndex = j;
-                    contIndex = pair.getKey();
-                    minIncrease = pair.getValue();
-                }
-            }
-            // If feasible, insert container
-            if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
-                this.schedule.get(tourIndex).InsertPoint(contIndex, randContainer);
-            }
+            insertBestContainer(randContainer);
         }
-
-        // Return rho
         return rho;
     }
     
     /**
-     * Selects a random container and inserts it in the k-th best position in the
-     * schedule, maximizing the difference in cost between the k-th best insertion
-     * and the best insertion. It is repeated rho times.
+     * It inserts the container in the best position in the
+     * schedule, considering the total cost. 
+     *
+     * @param container the container to insert
+     * 
+     */
+    protected void insertBestContainer(Point container) {
+        // The tour index and position of the container that would
+        // lead to the minimum increase in the total schedule cost when inserted
+        int tourIndex = Parameters._404;
+        int contIndex = Parameters._404;
+        double minIncrease = Double.POSITIVE_INFINITY;
+
+        // Loop over all tours in the schedule to evaluate the increase 
+        // obtainable from each of them if the container is inserted in the best position
+        for (int j = 0; j < this.schedule.size(); j++) {
+            ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindBestContainerInsertion(container);
+            if (pair.getValue() < minIncrease) {
+                tourIndex = j;
+                contIndex = pair.getKey();
+                minIncrease = pair.getValue();
+            }
+        }
+        // If feasible, insert container
+        if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
+            this.schedule.get(tourIndex).InsertPoint(contIndex, container);
+        }
+    }
+    
+    
+    //TODO get the best position every time instead of computing it again in the end
+    
+    /**
+     * We choose to insert the container which maximizes the difference in cost between inserting
+     * it in its best position and k-th best position. Then we insert it at its minimum cost position.
+     * It is repeated rho times.
      *
      * @param k the k-th best position to compute the regret 
      * @return rho - number of times operator is applied
@@ -1091,34 +1129,42 @@ public abstract class Schedule {
 
         // Select a rho with an upper bound on the number of containers in the data
         int rho = this.rho(this.data.GetContainers().size());
-
+        
+        // List of containers with their respective regret-k value
+        ArrayList<ImmutablePair<Point, Double>> regretValues = new ArrayList<>();
+            
         // Insert rho random containers
-        for (int i = 0; i < rho; i++) {
-
-            // Select a random container from the data
-            int randIndex = this.data.GetRand().nextInt(this.data.GetContainers().size());
-            Point randContainer = this.data.GetContainers().get(randIndex);
-
-            // The tour index and position of the container that would
-            // lead to the max incrsease in the difference in cost
-            int tourIndex = Parameters._404;
-            int contIndex = Parameters._404;
-            double maxDifference = 0;
-
-            // Loop over all tours in the schedule to evaluate the difference in cost 
-            // from each of them if the container is inserted in the k-th best position
-            for (int j = 0; j < this.schedule.size(); j++) {
-                ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindContainerInsertionRegret(randContainer, k);
-                if (pair.getValue() > maxDifference) {
-                    tourIndex = j;
-                    contIndex = pair.getKey();
-                    maxDifference = pair.getValue();
+        for (int i = 0; i < rho; i++) {   
+            // Loop over the containers to choose one
+            for(Point container : this.data.GetContainers()){
+                //One entry for the tour and the cost increase when best insertion
+                ArrayList<Double> costs = new ArrayList<>();
+                //Loop over the possible routes
+                for(Tour tour : this.schedule){
+                    // Add the cost increase if we insert the dump in its best position in this tour
+                    costs.add(tour.FindBestContainerInsertion(container).right);
+                }
+                //We can compute the regret value (only if k is smaller than the number of routes)
+                if(k <= costs.size()){
+                    Collections.sort(costs);
+                    double regret = costs.get(k-1)-costs.get(0);
+                    regretValues.add(new ImmutablePair<>(container, regret));
                 }
             }
-            // If feasible, insert container in its best position
-            if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
-                this.schedule.get(tourIndex).InsertPoint(contIndex, randContainer);
-            }
+        }
+        
+        // We need to sort the regretValues in reversed order and get the container with the highest regret
+        if(!regretValues.isEmpty()){
+            Collections.sort(regretValues, new Comparator<ImmutablePair<Point, Double>>() {
+                @Override
+                public int compare(final ImmutablePair<Point, Double> o1, final ImmutablePair<Point, Double> o2) {
+                    return o2.right.compareTo(o1.right);
+                }
+            });
+            Point containerToAdd = regretValues.get(0).left;
+            
+            // insert it at the best position
+            insertBestContainer(containerToAdd);
         }
 
         // Return rho
@@ -1216,7 +1262,6 @@ public abstract class Schedule {
      * @return 1 - number of times operator is applied
      */
     protected int insertRandomDump() {
-
         // Select one random tour
         int tourIndex = this.data.GetRand().nextInt(this.schedule.size());
         Tour tour = this.schedule.get(tourIndex);
@@ -1234,6 +1279,23 @@ public abstract class Schedule {
      * @return 1 - number of times operator is applied
      */
     protected int insertBestDump() {
+        // Select a random dump from the data
+        int randIndex = this.data.GetRand().nextInt(this.data.GetDumps().size());
+        Point randDump = this.data.GetDumps().get(randIndex);   
+        insertBestDump(randDump);
+        
+        return 1;
+    }
+    
+    /**
+     * Inserts a dump in the tour and the position in the tour that would
+     * lead to the least cost increase considering the total schedule cost.
+     *
+     * @param dump the dump to insert at the best position
+     * 
+     * @return 1 - number of times operator is applied
+     */
+    protected int insertBestDump(Point dump) {
 
         // Select a random dump from the data
         int randIndex = this.data.GetRand().nextInt(this.data.GetDumps().size());
@@ -1264,41 +1326,52 @@ public abstract class Schedule {
         return 1;
     }
     
+    
+    //TODO not reuse insertBest
+    
     /**
-     * Inserts a random dump in the tour and the position in the tour that would
-     * lead to the maximum cost difference between inserting it in its k-th best 
-     * position and its best solution
+     * We choose to insert the dump which maximizes the difference in cost between inserting
+     * it in its best position and k-th best position. Then we insert it at the position in the tour that would
+     * lead to the least cost increase considering the total schedule cost
      * 
      * @param k the k-th best position to compute the regret 
      * @return 1 - number of times operator is applied
      */
     protected int insertDumpWithRegret(int k) {
-
-        // Select a random dump from the data
-        int randIndex = this.data.GetRand().nextInt(this.data.GetDumps().size());
-        Point randDump = this.data.GetDumps().get(randIndex);
-
-        // The tour index and position of the dump that would
-        // lead to the maximum cost difference between inserting it in its k-th best 
-        // position and its best solution
-        int tourIndex = Parameters._404;
-        int dumpIndex = Parameters._404;
-        double maxDifference = 0;
-
-        // Loop over all tours in the schedule to evaluate the 
-        for (int j = 0; j < this.schedule.size(); j++) {
-            ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindDumpInsertionWithRegret(randDump, k);
-            if (pair.getValue() > maxDifference) {
-                tourIndex = j;
-                dumpIndex = pair.getKey();
-                maxDifference = pair.getValue();
+        // List of dumps with their respective regret-k value
+        ArrayList<ImmutablePair<Point, Double>> regretValues = new ArrayList<>();
+                
+        // Loop over the dumps to choose one
+        for(Point dump : this.data.GetDumps()){
+            //One entry for the tour and the cost increase when best insertion
+            ArrayList<Double> costs = new ArrayList<>();
+            //Loop over the possible routes
+            for(Tour tour : this.schedule){
+                // Add the cost increase if we insert the dump in its best position in this tour
+                costs.add(tour.FindBestDumpInsertion(dump).right);
+            }
+            //We can compute the regret value (only if k is smaller than the number of routes)
+            if(k <= costs.size()){
+                Collections.sort(costs);
+                double regret = costs.get(k-1)-costs.get(0);
+                regretValues.add(new ImmutablePair<>(dump, regret));
             }
         }
-        // If feasible, insert container
-        if (tourIndex != Parameters._404 && dumpIndex != Parameters._404) {
-            this.schedule.get(tourIndex).InsertPoint(dumpIndex, randDump);
+        
+        // We need to sort the regretValues in reversed order and get the dump with the highest regret
+        if(!regretValues.isEmpty()){
+            Collections.sort(regretValues, new Comparator<ImmutablePair<Point, Double>>() {
+                @Override
+                public int compare(final ImmutablePair<Point, Double> o1, final ImmutablePair<Point, Double> o2) {
+                    return o2.right.compareTo(o1.right);
+                }
+            });
+            Point dumpToAdd = regretValues.get(0).left;
+            
+            // insert it at the best position
+            insertBestDump(dumpToAdd);
         }
-
+   
         // Return 1
         return 1;
     }
