@@ -141,7 +141,7 @@ public class Parameters {
     public static final String[] hVrpcRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont"};
     public static final String[] hVrptRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont"};
     //public static final String[] hIrpRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont", "insRandDump", "insBestDump", "swapAssgDumps", "replRandDump", "reorderDumps", "replStartingPoint"};
-    public static final String[] hIrpRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont", "insRandDump", "insBestDump", "swapAssgDumps", "replRandDump", "reorderDumps", "replStartingPoint", "insertRhoContainersWithRegret", "insertDumpWithRegret"};
+    public static final String[] hIrpRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont", "insRandDump", "insBestDump", "swapAssgDumps", "replRandDump", "reorderDumps", "replStartingPoint", "insertRhoContainersWithRegret"};
     public static final String[] hIrpaRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont"};
     public static final String[] hIrpcRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont"};
     public static final int[] hNumDestroyOp = new int[]{Parameters.hTspDestroyOps.length, Parameters.hVrpDestroyOps.length, Parameters.hVrpcDestroyOps.length, Parameters.hVrptDestroyOps.length, Parameters.hIrpDestroyOps.length, Parameters.hIrpaDestroyOps.length, Parameters.hIrpcDestroyOps.length};
