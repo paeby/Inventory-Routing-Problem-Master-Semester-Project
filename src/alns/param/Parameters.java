@@ -133,7 +133,7 @@ public class Parameters {
     public static final String[] hVrpDestroyOps = new String[]{"remRandRhoCont", "remWorstRhoCont", "remShawCont", "empty1Truck", "remRandDump", "remWorstDump"};
     public static final String[] hVrpcDestroyOps = new String[]{"remRandRhoCont", "remWorstRhoCont", "remShawCont", "empty1Truck", "remRandDump", "remWorstDump", "swapAssgCont", "insRandDump", "insBestDump", "swapAssgDumps", "replRandDump", "reorderDumps"};
     public static final String[] hVrptDestroyOps = new String[]{"remRandRhoCont", "remWorstRhoCont", "remShawCont", "empty1Truck", "swapAssgCont"};
-    public static final String[] hIrpDestroyOps = new String[]{"remRandRhoCont", "remWorstRhoCont", "remShawCont", "empty1Day", "empty1Truck", "remRandDump", "remWorstDump", "removeConsecVisits", "removeAllShawContainers"};
+    public static final String[] hIrpDestroyOps = new String[]{"remRandRhoCont", "remWorstRhoCont", "remShawCont", "empty1Day", "empty1Truck", "remRandDump", "remWorstDump", "removeConsecVisits", "removeAllShawContainers", "removeAllShawContainersRelatedness"};
     public static final String[] hIrpaDestroyOps = new String[]{"remRandRhoCont", "remWorstRhoCont", "remShawCont", "empty1Day", "removeConsecVisits"};
     public static final String[] hIrpcDestroyOps = new String[]{"remRandRhoCont", "remWorstRhoCont", "remShawCont", "empty1Day", "removeConsecVisits"};
     public static final String[] hTspRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont"};

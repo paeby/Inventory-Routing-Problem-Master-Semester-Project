@@ -129,6 +129,8 @@ public class ScheduleIRP extends Schedule {
             case 8:
                 nbTimesAppliedRepairOp = this.removeAllShawContainers();
                 break;
+            case 9:
+                nbTimesAppliedRepairOp = this.removeAllShawContainersRelatedness(0.2, 1/3.0, 1/3.0, 1/3.0);
             default:
                 System.out.println("Destroy operator index out of range...");
                 break;

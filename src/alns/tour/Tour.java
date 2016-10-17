@@ -1524,66 +1524,7 @@ public abstract class Tour {
         // Return an ImmutablePair of bestIndex and bestIncrease
         return new ImmutablePair<>(bestIndex, bestIncrease);
     }
-    
-//    /**
-//     * Finds k-th best insertion position of the passed container in the tour, 
-//     * and returns the insertion position of the best insertion and the
-//     * difference in cost between the k-th cheapest route and the cheapest route
-//     *
-//     * @param insContainer the container to be inserted
-//     * @param k the k-th best position to compute the regret 
-//     * @return an ImmutablePair of the index of the k-th best position and 
-//     * the difference in cost between the k-th cheapest route and the cheapest route
-//     */
-//    public ImmutablePair<Integer, Double> FindContainerInsertionRegret(Point insContainer, int k) {
-//        // List of positions with respective cost 
-//        ArrayList<ImmutablePair<Integer, Double>> insertions = new ArrayList<>();
-//
-//        // If the passed container is in the list of available containers and k is not larger than the number of possible insertions
-//        if (this.cTracker.GetVisit(insContainer, this.day) == false) {
-//
-//            // Insert container at position 0
-//            this.InsertPoint(0, insContainer);
-//
-//            // Loop to add all the possible positions and their respective cost in the Array
-//            // making sure we leave a starting point at the beginning, and a dump
-//            // and a starting point at the end
-//            for (int i = 1; i < this.tour.size() - 2; i++) {
-//
-//                // Move container gradually forward
-//                this.SwapPoints(i - 1, i);
-//                // Estimate new cost
-//                double newCost = this.getEffectiveCost();
-//                // If bestIncrease is improved, update bestIncrease and bestIndex
-//                insertions.add(new ImmutablePair<>(i, newCost));
-//            }
-//            // Remove container from its last position  
-//            this.RemovePoint(this.tour.size() - 3);
-//        }
-//        
-//        else {
-//            return new ImmutablePair<>(Parameters._404, 0.0);
-//        }
-//        // Sort the insert positions in ascending cost value
-//        Collections.sort(insertions, new Comparator<ImmutablePair<Integer, Double>>() {
-//            @Override
-//            public int compare(final ImmutablePair<Integer, Double> o1, final ImmutablePair<Integer, Double> o2) {
-//                return o1.right.compareTo(o2.right);
-//            }
-//        });
-//        
-//        
-//        // Return an ImmutablePair of the index of the best position and the difference in cost 
-//        // between the k-th cheapest route and the cheapest route
-//        // If k is larger than the number of possible positions, we return the best position and a difference of 0
-//        
-//        if(k > insertions.size()-1){
-//            return new ImmutablePair<>(insertions.get(0).left, 0.0);
-//        }
-//        
-//        return new ImmutablePair<>(insertions.get(0).left, insertions.get(k-1).right-insertions.get(0).right);
-//    }
-//    
+ 
     /**
      * Selects a random container in the tour, and removes all containers within
      * 2 * dist_min from it, where dist_min is the distance from the selected
@@ -1838,69 +1779,6 @@ public abstract class Tour {
         return new ImmutablePair<>(bestIndex, bestIncrease);
     }
     
-    /**
-     * Finds k-th best insertion position of the passed container in the tour, 
-     * and returns the insertion position of the best insertion and the
-     * difference in cost between the k-th cheapest route and the cheapest route
-     *
-//     * @param insDump the dump to be inserted
-//     * @param k the k-th best position to compute the regret 
-//     * @return an ImmutablePair of the index and increase obtainable from the
-//     * best insertion position
-//     */
-//    public ImmutablePair<Integer, Double> FindDumpInsertionWithRegret(Point insDump, int k) {
-//        // List of positions with respective cost 
-//        ArrayList<ImmutablePair<Integer, Double>> insertions = new ArrayList<>();
-//
-//        // If there are more than two containers in the tour
-//        if (this.GetNumContainers() > 2) {
-//
-//            // Insert dump at position 1
-//            this.InsertPoint(1, insDump);
-//            
-//            // Loop to add all the possible positions and their respective cost in the Array
-//            // making sure we leave a starting point at the beginning, and a dump
-//            // and a starting point at the end. Moreover, the dump should not
-//            // neighbor another dump
-//            for (int i = 2; i < this.tour.size() - 3; i++) {
-//                // Move dump gradually forward
-//                this.SwapPoints(i - 1, i);
-//
-//                if (this.tour.get(i - 1).Is() != Parameters.pointIsDump
-//                    && this.tour.get(i + 1).Is() != Parameters.pointIsDump) {
-//                    insertions.add(new ImmutablePair<>(i, this.getEffectiveCost()));
-//                }
-//            }
-//            // Remove the dump from its last position  
-//            this.RemovePoint(this.tour.size() - 4);
-//        }
-//        
-//        else {
-//            return new ImmutablePair<>(Parameters._404, 0.0);
-//        }
-// 
-//        // Sort the insert positions in ascending cost value
-//        Collections.sort(insertions, new Comparator<ImmutablePair<Integer, Double>>() {
-//            @Override
-//            public int compare(final ImmutablePair<Integer, Double> o1, final ImmutablePair<Integer, Double> o2) {
-//                return o1.right.compareTo(o2.right);
-//            }
-//        });
-//  
-//        // If there is no possible solution
-//        if(insertions.isEmpty()) {
-//            return new ImmutablePair<>(Parameters._404, 0.0);
-//        }
-//        
-//        // If k is larger than the number of possible positions, we return the best position and a difference of 0
-//        if(k > insertions.size()){
-//            return new ImmutablePair<>(insertions.get(0).left, 0.0);
-//        }
-//        
-//        // Return an ImmutablePair of bestIndex and bestIncrease
-//        return new ImmutablePair<>(insertions.get(0).left, insertions.get(k-1).right - insertions.get(0).right);
-//    }
-
     /**
      * Replaces a random dump in the tour with the best different dump from the
      * list of available dumps.

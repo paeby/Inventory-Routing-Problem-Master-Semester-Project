@@ -885,8 +885,7 @@ public abstract class Schedule {
         // Return 1
         return 1;
     }
-    //TODO find other measures: GetOverflowProbability
-    // normalise , weighted sum, time windows
+   
     /**
      * Removes customers that are close to each other (Shaw, 1997). In
      * particular, it randomly selects a tour and a container in it. It
@@ -919,7 +918,81 @@ public abstract class Schedule {
         return 1;
     }
    
-
+    /**
+     * Removes customers that are close to each other (Shaw, 1997). In
+     * particular, it randomly selects a tour and a container in it. It
+     * calculates the relatedness of the container with all others containers
+     * scheduled the same day. The relatedness is the following weighted sum:
+     * a*distance + b*time_diff + c*overflow_diff.
+     * The distance, time_diff and overflow_diff are normalized between 0 and 1.
+     * The coefficients a,b and c must sum to 1.
+     * It removes all containers under the given threshold in all the tours
+     * scheduled the same day.
+     * 
+     * @param threshold removes the points with relatedness under this threshold
+     * @param a weight factor for distance
+     * @param b weight factor for time_diff
+     * @param c weight factor for overflow_diff
+     * 
+     * @return 1 - number of times operator is applied
+     */
+    protected int removeAllShawContainersRelatedness(double threshold, double a, double b, double c) {
+        // Select one random tour
+        int tourIndex = this.data.GetRand().nextInt(this.schedule.size());
+        Tour tour = this.schedule.get(tourIndex);
+        // Select a random container from the random tour
+        int randContainerIndex = tour.GetRandContainerIndex();
+        // If there are containers in the tour, perform Shaw removal
+        if (randContainerIndex != Parameters._404) {
+            
+            ArrayList<Double> distances = new ArrayList<>();
+            ArrayList<Double> time_diff = new ArrayList<>();
+            ArrayList<Double> overflow_diff = new ArrayList<>();
+            
+            Point randContainer = tour.GetContainers().get(randContainerIndex);
+            // Now we iterate through all the tours and compute the three types of relatedness
+            // They will be normalized at the end
+            for(int i = 0; i < this.schedule.size(); i++) {
+                Tour t = this.schedule.get(i);
+                //check that it is same day
+                if(t.GetDay() == tour.GetDay()){
+                    // We compute the three relatedness and stores them in their respective list
+                    for (Point cont: t.GetContainers()) {
+                        distances.add(this.data.GetDistance(cont, randContainer));
+                        time_diff.add(this.data.GetTimeDiff(cont, randContainer));
+                        double overflow = this.cTracker.GetOverflowProbability(cont, t.GetDay()) - this.cTracker.GetOverflowProbability(randContainer, t.GetDay());
+                        overflow_diff.add(Math.abs(overflow));
+                    }
+                } 
+            }
+            
+            // We normalize the three relatedness measures
+            normalize(distances);
+            normalize(time_diff);
+            normalize(overflow_diff);
+            
+            // We remove the points under the relatedness threshold
+            int listIndex = 0;
+            for(int i = 0; i < this.schedule.size(); i++) {
+                Tour t = this.schedule.get(i);
+                //check that it is same day
+                if(t.GetDay() == tour.GetDay()){
+                    // We compute the three relatedness and stores them in their respective list
+                    for (Point cont: t.GetContainers()) {
+                        // relatedness = a*distance + b*time_diff + c*overflow_diff
+                        double weightedRelatedness = a*distances.get(listIndex) + b*time_diff.get(listIndex) + c*overflow_diff.get(listIndex);
+                        // if the relatedness is smaller than the given threshold
+                        if(weightedRelatedness <= threshold) {
+                            t.RemovePoint(cont);
+                        }
+                        listIndex++;
+                    }
+                }
+            }
+        }
+        return 1;
+    }
+    
     /**
      * Selects randomly a day and empties all tours performed on this day.
      *
@@ -1526,5 +1599,30 @@ public abstract class Schedule {
 
         // Return Simulation object
         return simulation;
+    }
+    
+    /**
+    * Normalize the given list by feature scaling (x-min)/(max-min)
+    * 
+    * @param l list to be normalized
+    */
+    
+    public void normalize(ArrayList<Double> l) {
+        Double min = Double.MAX_VALUE;
+        Double max = Double.MIN_VALUE;
+        for(Double e: l){
+            if(e<min) {
+                min = e;
+            }
+            else if(e>max) {
+                max = e;
+            }
+        }
+        
+        for(int i = 0; i < l.size(); i++) {
+            double normalized_value = (l.get(i)-min)/(max-min);
+            l.set(i, normalized_value);
+        }
+        
     }
 }
