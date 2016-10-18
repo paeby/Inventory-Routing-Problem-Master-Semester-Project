@@ -1717,17 +1717,6 @@ public class Data implements Serializable {
     public double GetDistance(Point origin, Point destination) {
         return this.distanceMatrix[origin.GetSimpleDWid()][destination.GetSimpleDWid()];
     }
-    
-    /**
-     * Returns the time difference between origin and destination based on the time windows.
-     *
-     * @param origin origin point
-     * @param destination destination point
-     * @return time windows difference
-     */
-    public double GetTimeDiff(Point origin, Point destination) {
-        return Math.abs(origin.GetTWLower()-destination.GetTWLower()) + Math.abs(origin.GetTWUpper()-destination.GetTWUpper());
-    }
 
     /**
      * Returns the travel time in hours between origin and destination.

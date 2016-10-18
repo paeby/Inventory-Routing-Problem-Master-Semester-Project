@@ -2064,4 +2064,35 @@ public abstract class Tour {
         }
         this.Construct();
     }
+    
+    /**
+     * Return the points in the tour
+     * 
+     * @return the Point at the given pos
+     */
+    public ArrayList<Point> GetTour() {
+        return this.tour;
+    }
+    
+    /**
+     * Return the overflow probability of the given point
+     * 
+     * @param cont the container to retrieve overflow probability
+     * 
+     * @return the Point at the given pos
+     */
+    public Double GetOverflowProbability(Point cont) {
+        return this.cTracker.GetOverflowProbability(cont, this.day);
+    }
+    
+    /**
+     * Return the the volume load of the given point
+     * 
+     * @param cont the container to retrieve volume load
+     * 
+     * @return the volume load at the given pos
+     */
+    public Double GetVolumeLoad(Point cont) {
+        return this.cTracker.GetVolumeLoad(cont, this.day);
+    }
 }
