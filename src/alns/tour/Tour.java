@@ -597,7 +597,6 @@ public abstract class Tour {
                 containers.add(new Point(point));
             }
         }
-
         return containers;
     }
 

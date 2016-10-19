@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 /**
@@ -966,7 +967,7 @@ public abstract class Schedule {
                 if(t.GetDay() == tour.GetDay()){
                     // We compute the three relatedness and stores them in their respective list
                     for(Point cont: t.GetContainers()){
-                        if (cont.GetSimpleContWid() != randContainer.GetSimpleDWid()) { // if it is not the random container
+                        if (cont.GetSimpleDWid()!= randContainer.GetSimpleDWid()) { // if it is not the random container
                             //distance difference
                             distances.add(this.data.GetDistance(cont, randContainer));
                             //time difference
@@ -1029,12 +1030,34 @@ public abstract class Schedule {
                 }
             }
         }
-        KruskalClustering clustering = new KruskalClustering(containers, routes);
-        if(clustering.clusters.size() > 0){
-         
-            int clusterToRemove = this.data.GetRand().nextInt(clustering.clusters.size());
-            for(Point p : clustering.getCluster(clusterToRemove)){
-                containerTour.get(p).RemovePoint(p);
+
+        if(routes == 1){
+            routes++;
+        }
+        
+        if(containers.size() > 0){
+            KruskalClustering clustering = new KruskalClustering(containers, routes, this.data);
+            
+            for (Iterator<Integer> iterator = clustering.clusters.keySet().iterator(); iterator.hasNext(); ) {
+                int cluster = iterator.next();
+                if(clustering.clusters.get(cluster).size() > containers.size()/2){
+                    iterator.remove();
+                }
+            }
+            
+            if(clustering.clusters.size() > 0){
+                int clusterToRemove = this.data.GetRand().nextInt(clustering.clusters.size());
+                int c = 0;
+                int i = 0;
+                for(Integer k : clustering.clusters.keySet()) {
+                    if (i == clusterToRemove){
+                        c =  k;
+                    }
+                    i++;
+                }
+                for(Point p : clustering.getCluster(c)){
+                    containerTour.get(p).RemovePoint(p);
+                }
             }
         }
         return 1;

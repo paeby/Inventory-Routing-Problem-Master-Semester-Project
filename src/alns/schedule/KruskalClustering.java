@@ -5,6 +5,7 @@ import java.util.HashMap;
 import alns.schedule.Graph.*;
 import java.util.Collections;
 import alns.data.Point;
+import alns.data.Data;
 /**
  * Class used to compute the clusters of a schedule
  * 
@@ -12,32 +13,34 @@ import alns.data.Point;
  */
 public class KruskalClustering {
     // represent the roots of the subsets of the union-find
-    ArrayList<Vertex> initials;
+    ArrayList<Point> initials;
     Graph graph;
-    HashMap<Integer, ArrayList<Vertex>> clusters;
+    HashMap<Integer, ArrayList<Point>> clusters;
     ArrayList<Edge> mst;
     
-    public KruskalClustering(ArrayList<Point> points, int k){
+    public KruskalClustering(ArrayList<Point> points, int k, Data data){
         initials = new ArrayList<>();
         clusters = new HashMap <>();
-        graph = new Graph(points);
-        mst = getMST(graph, k);
+        graph = new Graph(points, data);
+        getMST(graph, k);
         clusterization(); 
     }
 
     /** Return the Minimum Spanning Tree */
-    private ArrayList<Edge> getMST(Graph graph, int k){
-        UnionFind uf = new UnionFind(graph.getGraphSize());
+    private void getMST(Graph graph, int k){
+        UnionFind uf = new UnionFind(graph.getVertexList());
         ArrayList<Edge> edgeList= graph.getEdgeList();
-        ArrayList<Edge> mst =  new ArrayList<>();
+        mst =  new ArrayList<>();
         Collections.sort(edgeList);// sort the edges in ascending order
+
         int x;
         int y;
         for(int i = 0; i < edgeList.size(); i++){
-            if(k == uf.getNumberSets())// verify if there are k subsets 
+            if(k == uf.getNumberSets()){// verify if there are k subsets 
                 break;
-            x = edgeList.get(i).getBegin().getId();
-            y = edgeList.get(i).getAdjacent().getId();
+            }
+            x = edgeList.get(i).getBegin().GetSimpleDWid();
+            y = edgeList.get(i).getAdjacent().GetSimpleDWid();
             if(uf.find(x) != uf.find(y)){
                 uf.union(x, y);
                 mst.add(edgeList.get(i));
@@ -48,21 +51,19 @@ public class KruskalClustering {
         for(int i = 0; i < roots.size(); i++){
             initials.add(graph.getVertexById(roots.get(i)));// add the roots vertexes
         }
-        
-        return mst;
     }
     
     /** Create the clusters	 */
     private void clusterization(){
         for(int i = 0; i < initials.size(); i++){
-            Vertex initial = initials.get(i);
-            clusters.put(i, new ArrayList<Vertex>());
+            Point initial = initials.get(i);
+            clusters.put(i, new ArrayList<Point>());
             createCluster(initial, i);
         }
     }
 
     /** Grouped the elements of one cluster	 */
-    private void createCluster(Vertex v, int cluster){
+    private void createCluster(Point v, int cluster){
         clusters.get(cluster).add(v);
         for(int i = 0; i < mst.size(); i++ ){
             if(! mst.get(i).isLabeled()){
@@ -79,33 +80,28 @@ public class KruskalClustering {
     }
     
     public ArrayList<Point> getCluster(int c){
-        ArrayList<Vertex> vertices = clusters.get(c);
-        ArrayList<Point> pointIds = new ArrayList<>();
-        for(Vertex v: vertices){
-            pointIds.add(graph.getIdsMap().get(v.getId()));
-        }
-        return pointIds;
+        return clusters.get(c);
     }
     
     private class UnionFind {
-	private int [] ids; // stores the ids of the vertexes
-	private int [] sizeSets;// stores the number of its elements, useful to balance the trees
+	private HashMap<Integer, Integer> ids; // stores the ids of the vertexes
+	private HashMap<Integer, Integer> sizeSets;// stores the number of its elements, useful to balance the trees
 
-	public UnionFind(int numElements){
-            ids = new int[numElements];
-            sizeSets = new int[numElements];
+	public UnionFind(ArrayList<Point> points){
+            ids = new HashMap<>();
+            sizeSets = new HashMap<>();
 
-            for(int i=0; i < numElements; i++){
-                ids[i] = i;
-                sizeSets[i] = 1;
+            for(Point p: points){
+                ids.put(p.GetSimpleDWid(), p.GetSimpleDWid());
+                sizeSets.put(p.GetSimpleDWid(), 1);
             }
 	}
 
 	/** Find the root of a element */
 	public int find(int x){
-            while(x != ids[x]){
-                ids[x] = ids[ids[x]]; // path compression
-                x = ids[x];
+            while(x != ids.get(x)){
+                ids.put(x, ids.get(ids.get(x))); // path compression
+                x = ids.get(x);
             }
             return x;
 	}
@@ -116,13 +112,13 @@ public class KruskalClustering {
             int yRoot = find(y);
 
             if(xRoot != yRoot){
-                if(sizeSets[xRoot] > sizeSets[yRoot]){// to balance the trees
-                    ids[yRoot] = xRoot;
-                    sizeSets[xRoot] += sizeSets[yRoot];
+                if(sizeSets.get(xRoot) > sizeSets.get(yRoot)){// to balance the trees
+                    ids.put(yRoot, xRoot);
+                    sizeSets.put(xRoot, sizeSets.get(xRoot)+sizeSets.get(yRoot));
                 }
                 else{
-                    ids[xRoot] = yRoot;
-                    sizeSets[yRoot] += sizeSets[xRoot];
+                    ids.put(xRoot, yRoot);
+                    sizeSets.put(yRoot, sizeSets.get(xRoot)+sizeSets.get(yRoot));
                 }
             }
 	}
@@ -130,9 +126,10 @@ public class KruskalClustering {
 	/** Return the number of subsets */
 	public int getNumberSets() {
             int cont = 0;
-            for(int i=0; i < ids.length; i++){
-                if(i == ids[i])
-                    cont += 1;
+            for(Integer i: ids.keySet()){
+                if(i.equals(ids.get(i))){
+                    cont++;
+                }
             }
             return cont;
 	}
@@ -140,9 +137,10 @@ public class KruskalClustering {
 	/** Return the roots of the subsets of the union-find */
 	public ArrayList<Integer> getRoots(){
             ArrayList<Integer> roots = new ArrayList<>();
-            for(int i=0; i < ids.length; i++){
-                if(i == ids[i])
+            for(Integer i: ids.keySet()){
+                if(i.equals(ids.get(i))){
                     roots.add(i);
+                }
             }
             return roots;
 	}

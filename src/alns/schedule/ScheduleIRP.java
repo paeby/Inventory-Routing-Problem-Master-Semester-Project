@@ -130,7 +130,7 @@ public class ScheduleIRP extends Schedule {
                 nbTimesAppliedDestroyOp = this.removeAllShawContainers();
                 break;
             case 9:
-                nbTimesAppliedDestroyOp = this.removeAllShawContainersRelatedness(0.4, 0.8, 0.1, 0.1, 0.4);
+                nbTimesAppliedDestroyOp = this.removeAllShawContainersRelatedness(0.3, 0.4, 0.1, 0.1, 0.4);
                 break;
             case 10: 
                 nbTimesAppliedDestroyOp = this.removeContainerCluster();
@@ -175,7 +175,7 @@ public class ScheduleIRP extends Schedule {
                 nbTimesAppliedRepairOp = this.replaceStartingPoint();
                 break;
             case 10:
-                nbTimesAppliedRepairOp = this.insertRhoContainersWithRegret(5);
+                nbTimesAppliedRepairOp = this.insertRhoContainersWithRegret(3);
                 break;
             default:
                 System.out.println("Repair operator index out of range...");
