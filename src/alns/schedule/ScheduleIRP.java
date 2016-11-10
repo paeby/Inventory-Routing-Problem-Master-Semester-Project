@@ -108,31 +108,31 @@ public class ScheduleIRP extends Schedule {
             case 1:
                 nbTimesAppliedDestroyOp = this.removeWorstRhoContainers();
                 break;
+//            case 2:
+//                nbTimesAppliedDestroyOp = this.removeShawContainers();
+//                break;
             case 2:
-                nbTimesAppliedDestroyOp = this.removeShawContainers();
-                break;
-            case 3:
                 nbTimesAppliedDestroyOp = this.emptyOneDay();
                 break;
-            case 4:
+            case 3:
                 nbTimesAppliedDestroyOp = this.emptyOneTruck();
                 break;
-            case 5:
+            case 4:
                 nbTimesAppliedDestroyOp = this.removeRandomDump();
                 break;
-            case 6:
+            case 5:
                 nbTimesAppliedDestroyOp = this.removeWorstDump();
                 break;
-            case 7:
+            case 6:
                 nbTimesAppliedDestroyOp = this.removeConsecutiveVisits();
                 break;
-            case 8:
-                nbTimesAppliedDestroyOp = this.removeAllShawContainers();
+//            case 8:
+//                nbTimesAppliedDestroyOp = this.removeAllShawContainers();
+//                break;
+            case 7:
+                nbTimesAppliedDestroyOp = this.removeAllShawContainersRelatedness(0.2, 0.7, 0.0, 0.3);
                 break;
-            case 9:
-                nbTimesAppliedDestroyOp = this.removeAllShawContainersRelatedness(0.3, 0.4, 0.1, 0.1, 0.4);
-                break;
-            case 10: 
+            case 8: 
                 nbTimesAppliedDestroyOp = this.removeContainerCluster();
                 break;
             default:
@@ -175,7 +175,7 @@ public class ScheduleIRP extends Schedule {
                 nbTimesAppliedRepairOp = this.replaceStartingPoint();
                 break;
             case 10:
-                nbTimesAppliedRepairOp = this.insertRhoContainersWithRegret(3);
+                nbTimesAppliedRepairOp = this.insertRhoContainersWithRegret(2);
                 break;
             default:
                 System.out.println("Repair operator index out of range...");

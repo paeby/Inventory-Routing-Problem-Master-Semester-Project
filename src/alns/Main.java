@@ -32,8 +32,8 @@ public class Main {
     private static final ArrayList<Boolean> requiredReturnsToHome = new ArrayList<>(Arrays.asList(true, true, true, true, true, true, true));
 
     // Emergency collection costs and route failure cost multipliers to be tested
-    private static final double[] emergencyCosts = new double[]{100.d, 50.d, 25.d};
-    private static final double[] routeFailureCostMultipliers = new double[]{1.00d, 0.50d, 0.25d};
+    private static final double[] emergencyCosts = new double[]{100};//, 50.d, 25.d};
+    private static final double[] routeFailureCostMultipliers = new double[]{1.00d};//, 0.50d, 0.25d};
 
     // Container and truck effective capacity fractions
     private static final double[] containerEffectiveFractions = new double[]{1.d, 0.9d, 0.75d};
@@ -475,7 +475,7 @@ public class Main {
             IOException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException, Exception {
 
         // Run a regular probabilistic batch
-         RunRealDataExperimentBatchProbabilistic(1);
+         RunRealDataExperimentBatchProbabilistic(20);
         //RunBenchmarkExperimentBatch(Parameters.benchmarkTypeCrevier2007, Parameters.hModeVRPC, 1);
     }
 }

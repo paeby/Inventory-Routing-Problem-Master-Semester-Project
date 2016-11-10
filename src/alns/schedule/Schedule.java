@@ -925,9 +925,9 @@ public abstract class Schedule {
      * particular, it randomly selects a tour and a container in it. It
      * calculates the relatedness of the container with all others containers
      * scheduled the same day. The relatedness is the following weighted sum:
-     * a*distance + b*time_diff + c*overflow_diff + d*volume_diff.
-     * The distance, time_diff and overflow_diff and volume_diff are normalized between 0 and 1.
-     * The coefficients a,b, c and d must sum to 1.
+     * a*distance + b*time_diff + c*overflow_diff.
+     * The distance, time_diff and overflow_diff are normalized between 0 and 1.
+     * The coefficients a,b, and c must sum to 1.
      * It removes all containers under the given threshold in all the tours
      * scheduled the same day.
      * 
@@ -939,7 +939,7 @@ public abstract class Schedule {
      * 
      * @return 1 - number of times operator is applied
      */
-    protected int removeAllShawContainersRelatedness(double threshold, double a, double b, double c, double d) {
+    protected int removeAllShawContainersRelatedness(double threshold, double a, double b, double c) {
         // Select one random tour
         int tourIndex = this.data.GetRand().nextInt(this.schedule.size());
         Tour tour = this.schedule.get(tourIndex);
@@ -953,7 +953,7 @@ public abstract class Schedule {
             ArrayList<Double> distances = new ArrayList<>();
             ArrayList<Double> time_diff = new ArrayList<>();
             ArrayList<Double> overflow_diff = new ArrayList<>();
-            ArrayList<Double> volume_diff = new ArrayList<>();
+            //ArrayList<Double> volume_diff = new ArrayList<>();
             
             // this list is used to keep the tour and point (container)
             // In the pair, the Integer is the index of the tour and the Point the container in the tour
@@ -965,7 +965,7 @@ public abstract class Schedule {
                 Tour t = this.schedule.get(i);
                 //check that it is same day
                 if(t.GetDay() == tour.GetDay()){
-                    // We compute the three relatedness and stores them in their respective list
+                    // We compute the three relatedness measures and store them in their respective list
                     for(Point cont: t.GetContainers()){
                         if (cont.GetSimpleDWid()!= randContainer.GetSimpleDWid()) { // if it is not the random container
                             //distance difference
@@ -977,8 +977,8 @@ public abstract class Schedule {
                             double overflow = t.GetOverflowProbability(cont) - tour.GetOverflowProbability(randContainer);
                             overflow_diff.add(Math.abs(overflow));
                             //volume difference
-                            double volume = t.GetVolumeLoad(cont) - tour.GetVolumeLoad(randContainer);
-                            volume_diff.add(Math.abs(volume));
+//                            double volume = t.GetVolumeLoad(cont) - tour.GetVolumeLoad(randContainer);
+//                            volume_diff.add(Math.abs(volume));
                             //store the tour and point
                             containers.add(new ImmutablePair<>(i, cont));
                         }
@@ -991,13 +991,13 @@ public abstract class Schedule {
                 normalize(distances);
                 normalize(time_diff);
                 normalize(overflow_diff);
-                normalize(volume_diff);
+                //normalize(volume_diff);
                 
                 ArrayList<Double> relatedness = new ArrayList<>();
                 
                 // We compute the relatedness of each point
                 for(int i = 0; i<distances.size(); i++){
-                    double weightedRelatedness = a*distances.get(i) + b*time_diff.get(i) + c*overflow_diff.get(i) + d*volume_diff.get(i);
+                    double weightedRelatedness = a*distances.get(i) + b*time_diff.get(i) + c*overflow_diff.get(i); //+ d*volume_diff.get(i);
                     relatedness.add(weightedRelatedness);
                 }
                 // The measure is normalized
@@ -1015,29 +1015,50 @@ public abstract class Schedule {
         }
         return 1;
     }
-    
+
+    /**
+     * Removes one cluster of container. It selects a random day and then divides the containers 
+     * visited during this day into k clusters = number of tours scheduled this day. 
+     * If there is only one tour, we divide the tour into 2 clusters.
+     * Then a random cluster is selected and all containers from this cluster are removed.
+     * The cluster cannot be larger than half of the containers visited during the day.
+     * The clusters are computed using Kruskal's algorithm for the minimum spanning tree problem,
+     * it stops when k connected components are left.
+     * 
+     * @return 1 - number of times operator is applied
+     */
     protected int removeContainerCluster(){
+        // Get a random day in the schedule
         int randDay = this.data.GetRand().nextInt(this.data.GetPhLength());
-        int routes = 0;
+        // Compute the number of routes happening this day
+        int k = 0;
+        // We store to which route belongs each container
         HashMap<Point, Tour> containerTour = new HashMap<>();
+        // Containers 
         ArrayList<Point> containers = new ArrayList<>();
+        // Iterate through the routes, add all containers of the route to the list of containers
         for(Tour t: this.schedule){
-            if(t.GetDay() == randDay) {
-                routes++;
+            if(t.GetDay() == randDay && !t.GetContainers().isEmpty()) {
+                k++;
                 for(Point cont: t.GetContainers()){
                     containers.add(cont);
+                    // Add the reference to the tour containing the container
                     containerTour.put(cont, t);
                 }
             }
         }
-
-        if(routes == 1){
-            routes++;
+        
+        // If there is only one route, we compute two clusters
+        if(k == 1){
+            k++;
         }
         
+        // Clustering 
         if(containers.size() > 0){
-            KruskalClustering clustering = new KruskalClustering(containers, routes, this.data);
+            // Computes the k clusters for all containers scheduled the same random day
+            KruskalClustering clustering = new KruskalClustering(containers, k, this.data);
             
+            // Keeps only clusters smaller than half the total number of containers
             for (Iterator<Integer> iterator = clustering.clusters.keySet().iterator(); iterator.hasNext(); ) {
                 int cluster = iterator.next();
                 if(clustering.clusters.get(cluster).size() > containers.size()/2){
@@ -1046,15 +1067,19 @@ public abstract class Schedule {
             }
             
             if(clustering.clusters.size() > 0){
+                // Chooses a random cluster to remove 
                 int clusterToRemove = this.data.GetRand().nextInt(clustering.clusters.size());
                 int c = 0;
                 int i = 0;
-                for(Integer k : clustering.clusters.keySet()) {
+                // clusterToRemove is between 0 and the number of clusters, but we removed some
+                // clusters (not all indices are accessible), so we get the indice of the random position clusterToRemove
+                for(Integer clust : clustering.clusters.keySet()) {
                     if (i == clusterToRemove){
-                        c =  k;
+                        c =  clust;
                     }
                     i++;
                 }
+                // We remove the points of the cluster, accessing the reference to which route each container belongs
                 for(Point p : clustering.getCluster(c)){
                     containerTour.get(p).RemovePoint(p);
                 }
@@ -1213,58 +1238,110 @@ public abstract class Schedule {
         return rho;
     }
     
-    /**
-     * Selects a random container and inserts it in the best position in the
-     * schedule, considering the total cost. It is repeated rho times.
-     *
-     * @return rho - number of times operator is applied
-     */
+//    /**
+//     * Selects a random container and inserts it in the best position in the
+//     * schedule, considering the total cost. It is repeated rho times.
+//     *
+//     * @return rho - number of times operator is applied
+//     */
+//    protected int insertBestRhoContainers() {
+//        // Select a rho with an upper bound on the number of containers in the data
+//        int rho = this.rho(this.data.GetContainers().size());
+//        for (int i = 0; i < rho; i++) {
+//            // Select a random container from the data
+//            int randIndex = this.data.GetRand().nextInt(this.data.GetContainers().size());
+//            Point randContainer = this.data.GetContainers().get(randIndex);
+//            insertBestContainer(randContainer);
+//        }
+//        return rho;
+//    }
+    
+//    /**
+//     * It inserts the container in the best position in the
+//     * schedule, considering the total cost. 
+//     *
+//     * @param container the container to insert
+//     * 
+//     */
+//    protected void insertBestContainer(Point container) {
+//        // The tour index and position of the container that would
+//        // lead to the minimum increase in the total schedule cost when inserted
+//        int tourIndex = Parameters._404;
+//        int contIndex = Parameters._404;
+//        double minIncrease = Double.POSITIVE_INFINITY;
+//
+//        // Loop over all tours in the schedule to evaluate the increase 
+//        // obtainable from each of them if the container is inserted in the best position
+//        for (int j = 0; j < this.schedule.size(); j++) {
+//            ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindBestContainerInsertion(container);
+//            if (pair.getValue() < minIncrease) {
+//                tourIndex = j;
+//                contIndex = pair.getKey();
+//                minIncrease = pair.getValue();
+//            }
+//        }
+//        // If feasible, insert container
+//        if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
+//            this.schedule.get(tourIndex).InsertPoint(contIndex, container);
+//        }
+//    }
+
     protected int insertBestRhoContainers() {
         // Select a rho with an upper bound on the number of containers in the data
         int rho = this.rho(this.data.GetContainers().size());
-        for (int i = 0; i < rho; i++) {
-            // Select a random container from the data
-            int randIndex = this.data.GetRand().nextInt(this.data.GetContainers().size());
-            Point randContainer = this.data.GetContainers().get(randIndex);
-            insertBestContainer(randContainer);
-        }
-        return rho;
-    }
-    
-    /**
-     * It inserts the container in the best position in the
-     * schedule, considering the total cost. 
-     *
-     * @param container the container to insert
-     * 
-     */
-    protected void insertBestContainer(Point container) {
-        // The tour index and position of the container that would
-        // lead to the minimum increase in the total schedule cost when inserted
-        int tourIndex = Parameters._404;
-        int contIndex = Parameters._404;
-        double minIncrease = Double.POSITIVE_INFINITY;
-
-        // Loop over all tours in the schedule to evaluate the increase 
-        // obtainable from each of them if the container is inserted in the best position
-        for (int j = 0; j < this.schedule.size(); j++) {
-            ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindBestContainerInsertion(container);
-            if (pair.getValue() < minIncrease) {
-                tourIndex = j;
-                contIndex = pair.getKey();
-                minIncrease = pair.getValue();
+        // List of containers with their respective minimum cost increase value
+        ArrayList<ImmutablePair<Point, Double>> costValues = new ArrayList<>();
+        // We store the best position of each point
+        HashMap<Point, ImmutablePair<Tour, Integer>> bestPosition = new HashMap<>();
+        
+        // Loop over the containers to choose one
+        for(Point container : this.data.GetContainers()){
+            // check if a position has been found
+            boolean found = false;
+            double bestCost = Double.MAX_VALUE;
+            //Loop over the possible routes
+            for(Tour tour : this.schedule){
+                ImmutablePair<Integer, Double> best = tour.FindBestContainerInsertion(container);
+                if(best.left != Parameters._404){
+                    // Add the cost increase if we insert the container in its best position in this tour
+                    if(best.right < bestCost){
+                        found = true;
+                        bestCost = best.right;
+                        // Add the best position if it can be inserted in the tour
+                        bestPosition.put(container, new ImmutablePair<>(tour, best.left));
+                    }
+                }
+            }
+            if(found){
+                costValues.add(new ImmutablePair<>(container, bestCost));
             }
         }
-        // If feasible, insert container
-        if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
-            this.schedule.get(tourIndex).InsertPoint(contIndex, container);
+        // We sort the cost values in increasing order
+        if(!costValues.isEmpty()){
+            Collections.sort(costValues, new Comparator<ImmutablePair<Point, Double>>() {
+                @Override
+                public int compare(final ImmutablePair<Point, Double> o1, final ImmutablePair<Point, Double> o2) {
+                    return o1.right.compareTo(o2.right);
+                }
+            });
+            // insert rho containers
+            for (int i = 0; i < rho && i < costValues.size(); i++){
+                Point containerToAdd = costValues.get(i).left;
+                // insert it at the best position
+                ImmutablePair<Tour, Integer> best = bestPosition.get(containerToAdd);
+                best.left.InsertPoint(best.right, containerToAdd);
+            }
         }
+        // Return rho
+        return rho;
     }
     
     /**
      * We choose to insert the container which maximizes the difference in cost between inserting
      * it in its best position and k-th best position. Then we insert it at its minimum cost position.
      * It is repeated rho times.
+     * If we can't compute the regret value (k is smaller than the number of possible routes),
+     * we compute the largest k. The containers with the smallest k are privileged.
      *
      * @param k the k-th best position to compute the regret 
      * @return rho - number of times operator is applied
@@ -1277,54 +1354,66 @@ public abstract class Schedule {
         // List of containers with their respective regret-k value, and the largest k found if k is too large
         // <Point, <Regret, largest_k>>
         ArrayList<ImmutablePair<Point, ImmutablePair<Double, Integer>>> regretValues = new ArrayList<>();
-            
-        // Insert rho containers
-        for (int i = 0; i < rho; i++) {   
-            // Loop over the containers to choose one
-            for(Point container : this.data.GetContainers()){
-                //One entry for the tour and the cost increase when best insertion
-                ArrayList<Double> costs = new ArrayList<>();
-                //Loop over the possible routes
-                for(Tour tour : this.schedule){
+        // We store the best position of each point
+        HashMap<Point, ImmutablePair<Tour, Integer>> bestPosition = new HashMap<>();
+        
+        // Loop over the containers to choose one
+        for(Point container : this.data.GetContainers()){
+            //One entry for the tour and the cost increase when best insertion
+            ArrayList<Double> costs = new ArrayList<>();
+            double bestCost = Double.MAX_VALUE;
+            //Loop over the possible routes
+            for(Tour tour : this.schedule){
+                ImmutablePair<Integer, Double> best = tour.FindBestContainerInsertion(container);
+                if(best.left != Parameters._404){
                     // Add the cost increase if we insert the container in its best position in this tour
-                    costs.add(tour.FindBestContainerInsertion(container).right);
-                }
-                if(!costs.isEmpty()){
-                    Collections.sort(costs);
-                    //We can compute the regret value (only if k is smaller than the number of routes), otherwise we take the largest possible k
-                    if(k <= costs.size()){
-                        double regret = costs.get(k-1)-costs.get(0);
-                        regretValues.add(new ImmutablePair<>(container, new ImmutablePair<>(regret, k)));
-                    }
-                    else{
-                        int largest_k = costs.size();
-                        double regret = costs.get(largest_k-1)-costs.get(0);
-                        regretValues.add(new ImmutablePair<>(container, new ImmutablePair<>(regret, largest_k)));
+                    costs.add(best.right);
+                    if(best.right < bestCost){
+                        bestCost = best.right;
+                        // Add the best position if it can be inserted in the tour
+                        bestPosition.put(container, new ImmutablePair<>(tour, best.left));
                     }
                 }
             }
-            // We need to sort the regretValues in reversed order and get the container with the highest regret
-            // There is a priority for the ones with lowest k
-            if(!regretValues.isEmpty()){
-                Collections.sort(regretValues, new Comparator<ImmutablePair<Point, ImmutablePair<Double, Integer>>>() {
-                    @Override
-                    public int compare(final ImmutablePair<Point, ImmutablePair<Double, Integer>> o1, final ImmutablePair<Point, ImmutablePair<Double, Integer>> o2) {
-                        // if o1 has smallest k
-                        if(o1.right.right < o2.right.right){
-                            return -1;
-                        }
-                        else if(o1.right.right > o2.right.right){
-                            return 1;
-                        }
-                        // we compare the cost if k is the same, priority to higher cost
-                        else{
-                            return o2.right.left.compareTo(o1.right.left);
-                        }
+            if(!costs.isEmpty()){
+                Collections.sort(costs);
+                //We can compute the regret value (only if k is smaller than the number of routes), otherwise we take the largest possible k
+                if(k <= costs.size()){
+                    double regret = costs.get(k-1)-costs.get(0);
+                    regretValues.add(new ImmutablePair<>(container, new ImmutablePair<>(regret, k)));
+                }
+                else{
+                    int largest_k = costs.size();
+                    double regret = costs.get(largest_k-1)-costs.get(0);
+                    regretValues.add(new ImmutablePair<>(container, new ImmutablePair<>(regret, largest_k)));
+                }
+            }
+        }
+        // We need to sort the regretValues in reversed order and get the container with the highest regret
+        // There is a priority for the ones with lowest k
+        if(!regretValues.isEmpty()){
+            Collections.sort(regretValues, new Comparator<ImmutablePair<Point, ImmutablePair<Double, Integer>>>() {
+                @Override
+                public int compare(final ImmutablePair<Point, ImmutablePair<Double, Integer>> o1, final ImmutablePair<Point, ImmutablePair<Double, Integer>> o2) {
+                    // if o1 has smallest k
+                    if(o1.right.right < o2.right.right){
+                        return -1;
                     }
-                });
-                Point containerToAdd = regretValues.get(0).left;
+                    else if(o1.right.right > o2.right.right){
+                        return 1;
+                    }
+                    // we compare the cost if k is the same, priority to higher cost
+                    else{
+                        return o2.right.left.compareTo(o1.right.left);
+                    }
+                }
+            });
+            // insert rho containers
+            for (int i = 0; i < rho && i < regretValues.size(); i++){
+                Point containerToAdd = regretValues.get(i).left;
                 // insert it at the best position
-                insertBestContainer(containerToAdd);
+                ImmutablePair<Tour, Integer> best = bestPosition.get(containerToAdd);
+                best.left.InsertPoint(best.right, containerToAdd);
             }
         }
         // Return rho
