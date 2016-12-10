@@ -171,9 +171,9 @@ public class Parameters {
     public static double hReactionFactor = 0.5d;
     // TODO change weight for last heuristics
     public static ArrayList<ImmutablePair<Integer, Double>> hDestroyOpNormFactorResets = new ArrayList<>(Arrays.asList(
-            new ImmutablePair<>(7, 2d), new ImmutablePair<>(8, 2d)));
+            new ImmutablePair<>(7, 8d), new ImmutablePair<>(8, 8d)));
     public static ArrayList<ImmutablePair<Integer, Double>> hRepairOpNormFactorResets = new ArrayList<>(Arrays.asList(
-            new ImmutablePair<>(1, 2d), new ImmutablePair<>(10,2d)));
+            new ImmutablePair<>(1, 4.5d), new ImmutablePair<>(10,4.5d)));
     public static double hAwardS1 = 30.d;
     public static double hAwardS2 = 20.d;
     public static double hAwardS3 = 5.d;

@@ -1256,35 +1256,38 @@ public abstract class Schedule {
 //        return rho;
 //    }
     
-//    /**
-//     * It inserts the container in the best position in the
-//     * schedule, considering the total cost. 
-//     *
-//     * @param container the container to insert
-//     * 
-//     */
-//    protected void insertBestContainer(Point container) {
-//        // The tour index and position of the container that would
-//        // lead to the minimum increase in the total schedule cost when inserted
-//        int tourIndex = Parameters._404;
-//        int contIndex = Parameters._404;
-//        double minIncrease = Double.POSITIVE_INFINITY;
-//
-//        // Loop over all tours in the schedule to evaluate the increase 
-//        // obtainable from each of them if the container is inserted in the best position
-//        for (int j = 0; j < this.schedule.size(); j++) {
-//            ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindBestContainerInsertion(container);
-//            if (pair.getValue() < minIncrease) {
-//                tourIndex = j;
-//                contIndex = pair.getKey();
-//                minIncrease = pair.getValue();
-//            }
-//        }
-//        // If feasible, insert container
-//        if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
-//            this.schedule.get(tourIndex).InsertPoint(contIndex, container);
-//        }
-//    }
+    /**
+     * It inserts the container in the best position in the
+     * schedule, considering the total cost at the given day
+     *
+     * @param container the container to insert
+     * @param day the day it has to be inserted
+     * 
+     */
+    protected void insertBestContainer(Point container, int day) {
+        // The tour index and position of the container that would
+        // lead to the minimum increase in the total schedule cost when inserted
+        int tourIndex = Parameters._404;
+        int contIndex = Parameters._404;
+        double minIncrease = Double.POSITIVE_INFINITY;
+
+        // Loop over all tours in the schedule to evaluate the increase 
+        // obtainable from each of them if the container is inserted in the best position
+        for (int j = 0; j < this.schedule.size(); j++) {
+            if(this.schedule.get(j).GetDay() == day){
+                ImmutablePair<Integer, Double> pair = this.schedule.get(j).FindBestContainerInsertion(container);
+                if (pair.getValue() < minIncrease) {
+                    tourIndex = j;
+                    contIndex = pair.getKey();
+                    minIncrease = pair.getValue();
+                }
+            }
+        }
+        // If feasible, insert container
+        if (tourIndex != Parameters._404 && contIndex != Parameters._404) {
+            this.schedule.get(tourIndex).InsertPoint(contIndex, container);
+        }
+    }
 
     protected int insertBestRhoContainers() {
         // Select a rho with an upper bound on the number of containers in the data
@@ -1430,7 +1433,7 @@ public abstract class Schedule {
      * @return 1 - number of times operator is applied
      */
     protected int insertShawContainers() {
-
+        
         // Select one random tour
         int tourIndex = this.data.GetRand().nextInt(this.schedule.size());
         Tour tour = this.schedule.get(tourIndex);
@@ -1440,7 +1443,79 @@ public abstract class Schedule {
         // Return 1;
         return 1;
     }
+    
+    /**
+     * Inserts customers that are close to each other (Shaw, 1997). 
+     * It selects a random container from the list of containers and a random day in the schedule,
+     * find all containers that are below the relatedness measure threashold,
+     * the relatedness being a*distance + b*time_diff + c*overflow_diff, 
+     * and insert the containers in the best position considering all tours scheduled the random day
+     * The distance, time_diff and overflow_diff are normalized between 0 and 1.
+     * The coefficients a,b, and c must sum to 1.
+     * 
+     * @param threshold insert the containers with relatedness under this threshold
+     * @param a weight factor for distance
+     * @param b weight factor for time_diff
+     * @param c weight factor for overflow_diff
+     * @param d weight factor for volume_diff
+     * 
+     * @return 1 - number of times operator is applied
+     */
+ 
+    protected int insertShawContainersRelatedness(double threshold, double a, double b, double c) {
+        //select a random day
+        int randDay = this.data.GetRand().nextInt(this.data.GetPhLength());
+        // if there is at least one container
+        if(this.cTracker.GetAvblContainers(randDay).size() > 0){
 
+            // select random container
+            int contIndex = this.data.GetRand().nextInt(this.cTracker.GetAvblContainers(randDay).size());
+            Point container = this.cTracker.GetAvblContainers(randDay).get(contIndex);
+            
+            // List storing containers under threshold with "container"
+            ArrayList<Point> contToInsert = new ArrayList();
+
+            ArrayList<Double> distances = new ArrayList<>();
+            ArrayList<Double> time_diff = new ArrayList<>();
+            ArrayList<Double> overflow_diff = new ArrayList<>();
+
+            for(Point con : this.cTracker.GetAvblContainers(randDay)){
+                //distance difference
+                distances.add(this.data.GetDistance(container, con));
+                //time differencebva
+                double time = Math.abs(container.GetTWLower()-con.GetTWLower()) + Math.abs(container.GetTWUpper()-con.GetTWUpper());
+                time_diff.add(time);
+                //overflow probability difference
+                double overflow = this.cTracker.GetOverflowProbability(container,randDay) - this.cTracker.GetOverflowProbability(con,randDay);
+                overflow_diff.add(Math.abs(overflow));
+                contToInsert.add(con);
+            }
+            // We normalize the three relatedness measures
+            normalize(distances);          
+            normalize(time_diff); 
+            normalize(overflow_diff);
+            ArrayList<Double> relatedness = new ArrayList<>();
+
+            // We compute the relatedness of each point
+            for(int i = 0; i<distances.size(); i++){
+                double weightedRelatedness = a*distances.get(i) + b*time_diff.get(i) + c*overflow_diff.get(i); //+ d*volume_diff.get(i);
+                relatedness.add(weightedRelatedness);
+            }
+            
+            // The measure is normalized
+            normalize(relatedness);
+            // We add the points under the relatedness threshold
+            for(int i = 0; i < contToInsert.size(); i++){
+                if(relatedness.get(i) <= threshold){
+                    insertBestContainer(contToInsert.get(i), randDay);
+                }
+            }
+        }
+     
+        return 1;
+    }
+    
+    
     /**
      * Swaps the assignments of two random containers from two random tours,
      * using best insertion.
@@ -1779,7 +1854,7 @@ public abstract class Schedule {
     public void normalize(ArrayList<Double> l) {
         if(l.size() > 1){
             Double min = Double.MAX_VALUE;
-            Double max = Double.MIN_VALUE;
+            Double max = -Double.MAX_VALUE;
             for(Double e: l){
                 if(e<min) {
                     min = e;
@@ -1790,7 +1865,10 @@ public abstract class Schedule {
             }
 
             for(int i = 0; i < l.size(); i++) {
-                double normalized_value = (l.get(i)-min)/(max-min);
+                double normalized_value = 1.0;
+                if(min != max){
+                    normalized_value = (l.get(i)-min)/(max-min);
+                }
                 l.set(i, normalized_value); 
             }
         }

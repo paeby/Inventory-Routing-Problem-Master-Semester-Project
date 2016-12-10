@@ -150,8 +150,11 @@ public class ScheduleIRP extends Schedule {
             case 1:
                 nbTimesAppliedRepairOp = this.insertBestRhoContainers();
                 break;
+//            case 2:
+//                nbTimesAppliedRepairOp = this.insertShawContainers();
+//                break;
             case 2:
-                nbTimesAppliedRepairOp = this.insertShawContainers();
+                nbTimesAppliedRepairOp = this.insertShawContainersRelatedness(0.3, 0.7, 0.0, 0.3);
                 break;
             case 3:
                 nbTimesAppliedRepairOp = this.swapAssgContainers();
