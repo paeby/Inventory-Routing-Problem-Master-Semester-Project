@@ -94,6 +94,7 @@ public class Parameters {
     public static final String plotExportFolder = "/data/students/paeby/OutFiles/plot/";
     public static final String csvExportFolder = "/data/students/paeby/OutFiles/csv/";
     
+
 //    public static final String forecastRFile = "​../Forecaset/forecast.R";
 //    public static final String dataObjectFolder = "RealData/Forecast_5/";
 //    public static final String instanceFolder = "RealData/Forecast_5/";
@@ -148,7 +149,6 @@ public class Parameters {
     public static final String[] hVrpRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont", "insRandDump", "insBestDump", "swapAssgDumps", "replRandDump", "reorderDumps", "replStartingPoint"};
     public static final String[] hVrpcRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont"};
     public static final String[] hVrptRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont"};
-    //public static final String[] hIrpRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont", "insRandDump", "insBestDump", "swapAssgDumps", "replRandDump", "reorderDumps", "replStartingPoint"};
     public static final String[] hIrpRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont", "insRandDump", "insBestDump", "swapAssgDumps", "replRandDump", "reorderDumps", "replStartingPoint", "insertRhoContainersWithRegret"};
     public static final String[] hIrpaRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont"};
     public static final String[] hIrpcRepairOps = new String[]{"insRandRhoCont", "insBestRhoCont", "insShawCont", "swapAssgCont"};
@@ -169,7 +169,7 @@ public class Parameters {
     public static double hCoolRate = 0.99998d;
     public static int hPhiSegmentLength = 2000;
     public static double hReactionFactor = 0.5d;
-    // TODO change weight for last heuristics
+    // Change normalization factors for heuristics
     public static ArrayList<ImmutablePair<Integer, Double>> hDestroyOpNormFactorResets = new ArrayList<>(Arrays.asList(
             new ImmutablePair<>(7, 8d), new ImmutablePair<>(8, 8d)));
     public static ArrayList<ImmutablePair<Integer, Double>> hRepairOpNormFactorResets = new ArrayList<>(Arrays.asList(

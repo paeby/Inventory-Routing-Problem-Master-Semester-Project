@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="ALNS_R1ROLLING">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/dist/ALNS_R1ROLLING.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

@@ -953,7 +953,6 @@ public abstract class Schedule {
             ArrayList<Double> distances = new ArrayList<>();
             ArrayList<Double> time_diff = new ArrayList<>();
             ArrayList<Double> overflow_diff = new ArrayList<>();
-            //ArrayList<Double> volume_diff = new ArrayList<>();
             
             // this list is used to keep the tour and point (container)
             // In the pair, the Integer is the index of the tour and the Point the container in the tour
@@ -976,9 +975,6 @@ public abstract class Schedule {
                             //overflow probability difference
                             double overflow = t.GetOverflowProbability(cont) - tour.GetOverflowProbability(randContainer);
                             overflow_diff.add(Math.abs(overflow));
-                            //volume difference
-//                            double volume = t.GetVolumeLoad(cont) - tour.GetVolumeLoad(randContainer);
-//                            volume_diff.add(Math.abs(volume));
                             //store the tour and point
                             containers.add(new ImmutablePair<>(i, cont));
                         }
@@ -991,7 +987,6 @@ public abstract class Schedule {
                 normalize(distances);
                 normalize(time_diff);
                 normalize(overflow_diff);
-                //normalize(volume_diff);
                 
                 ArrayList<Double> relatedness = new ArrayList<>();
                 
@@ -1262,7 +1257,7 @@ public abstract class Schedule {
      *
      * @param container the container to insert
      * @param day the day it has to be inserted
-     * 
+     *
      */
     protected void insertBestContainer(Point container, int day) {
         // The tour index and position of the container that would
@@ -1288,7 +1283,13 @@ public abstract class Schedule {
             this.schedule.get(tourIndex).InsertPoint(contIndex, container);
         }
     }
-
+    
+    /**
+     * It inserts the rho containers that would lead to the minimum increase of the cost
+     * function. 
+     * 
+     * @return 1 - number of times operator is applied
+     */
     protected int insertBestRhoContainers() {
         // Select a rho with an upper bound on the number of containers in the data
         int rho = this.rho(this.data.GetContainers().size());
@@ -1315,6 +1316,7 @@ public abstract class Schedule {
                     }
                 }
             }
+            // The container can be inserted
             if(found){
                 costValues.add(new ImmutablePair<>(container, bestCost));
             }
@@ -1855,6 +1857,7 @@ public abstract class Schedule {
         if(l.size() > 1){
             Double min = Double.MAX_VALUE;
             Double max = -Double.MAX_VALUE;
+            // Look for maximum and minimum values in the list 
             for(Double e: l){
                 if(e<min) {
                     min = e;
@@ -1863,15 +1866,18 @@ public abstract class Schedule {
                     max = e;
                 }
             }
-
+            
             for(int i = 0; i < l.size(); i++) {
                 double normalized_value = 1.0;
+                // Avoid division by 0
                 if(min != max){
                     normalized_value = (l.get(i)-min)/(max-min);
                 }
+                // If min = max, noramlized value is 1
                 l.set(i, normalized_value); 
             }
         }
+        // Only one element in the list
         else{
             l.set(0,1.0);
         }

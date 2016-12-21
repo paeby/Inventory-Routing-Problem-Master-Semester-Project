@@ -1,2 +1,0 @@
-Before changing findBestDumpInsertion
-Sorted ".DS_Store" file problem (Mac)
